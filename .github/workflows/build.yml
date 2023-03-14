@@ -80,17 +80,21 @@ jobs:
           path: hpack
 
   release:
+    permissions:
+      contents: write
     needs: [build]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
+    - uses: actions/checkout@v3
     - uses: actions/download-artifact@v3
     - run: ls -R
+    - run: gzip hpack/hpack
     - name: Create release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          ./hpack/hpack
-        fail_on_unmatched_files: true
+      run: |
+        hub release create \
+          --attach hpack/hpack.gz \
+          --message "${{ github.ref_name }}" \
+          ${{ github.ref_name }}
